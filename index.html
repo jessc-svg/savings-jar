@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Savings Jar</title>
+<meta name="theme-color" content="#0F4B3A" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Savings Jar" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230F4B3A'/%3E%3Cpath d='M35 30 h30 v6 a6 6 0 0 1-6 6 h-18 a6 6 0 0 1-6-6 z' fill='%23E6A93C'/%3E%3Crect x='30' y='44' width='40' height='34' rx='10' fill='none' stroke='%23E6A93C' stroke-width='4'/%3E%3Crect x='34' y='60' width='32' height='14' rx='5' fill='%23E6A93C'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #EBF1EC;
+    --surface: #FFFFFF;
+    --ink: #16211C;
+    --ink-soft: #5D6E64;
+    --pine: #0F4B3A;
+    --pine-deep: #0A3529;
+    --honey: #E6A93C;
+    --honey-deep: #C4881F;
+    --coral: #DE7A56;
+    --line: #D8E3DB;
+    --display: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
+    --body: 'Inter', system-ui, -apple-system, sans-serif;
+    --radius: 20px;
+    --sheet-radius: 26px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--body);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+  .wrap {
+    max-width: 460px;
+    margin: 0 auto;
+    min-height: 100%;
+    padding: max(20px, env(safe-area-inset-top)) 20px calc(120px + env(safe-area-inset-bottom));
+    position: relative;
+  }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  input, select { font-family: inherit; font-size: 16px; }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  /* ---------- Setup ---------- */
+  .setup { padding-top: 8vh; }
+  .setup .mark {
+    width: 54px; height: 54px; border-radius: 16px; background: var(--pine);
+    display: grid; place-items: center; margin-bottom: 22px;
+  }
+  .setup .mark svg { width: 30px; height: 30px; }
+  .setup h1 {
+    font-family: var(--display); font-weight: 600; font-size: 30px;
+    letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 8px;
+  }
+  .setup .sub { color: var(--ink-soft); font-size: 15px; margin-bottom: 30px; max-width: 30ch; }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--ink-soft); margin-bottom: 7px;
+  }
+  .control {
+    width: 100%; background: var(--surface); border: 1.5px solid var(--line);
+    border-radius: 14px; padding: 14px 15px; font-size: 16px; color: var(--ink);
+    transition: border-color .15s;
+  }
+  .control:focus { outline: none; border-color: var(--pine); }
+  select.control { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235D6E64' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 15px center; padding-right: 38px; }
+  .amount-row { display: flex; align-items: stretch; }
+  .amount-row .cur {
+    display: grid; place-items: center; padding: 0 15px; min-width: 52px;
+    background: var(--surface); border: 1.5px solid var(--line); border-right: none;
+    border-radius: 14px 0 0 14px; font-weight: 600; color: var(--ink-soft); font-size: 16px;
+  }
+  .amount-row .control { border-radius: 0 14px 14px 0; }
+  .two { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; }
+
+  .btn-primary {
+    width: 100%; background: var(--pine); color: #fff; font-weight: 600; font-size: 16px;
+    padding: 16px; border-radius: 15px; letter-spacing: -0.01em;
+    transition: transform .08s, background .15s;
+  }
+  .btn-primary:active { transform: scale(0.985); background: var(--pine-deep); }
+  .hint { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; }
+
+  /* ---------- App header ---------- */
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pine); }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    background: var(--surface); border: 1px solid var(--line); color: var(--ink-soft);
+  }
+  .icon-btn:active { background: #f0f4f1; }
+  .goal-name {
+    font-family: var(--display); font-weight: 600; font-size: 26px; letter-spacing: -0.02em;
+    line-height: 1.1; margin: 2px 0 18px;
+  }
+
+  /* ---------- Jar ---------- */
+  .jar-stage { display: grid; place-items: center; margin: 4px 0 6px; }
+  .jar { width: 190px; height: 236px; }
+  .jar-caption { text-align: center; margin-top: 2px; }
+  .saved {
+    font-family: var(--display); font-weight: 700; font-size: 38px; letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .of-target { color: var(--ink-soft); font-size: 14px; margin-top: 6px; }
+  .of-target b { color: var(--ink); font-weight: 600; }
+
+  .message {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    padding: 13px 16px; margin: 18px 0; display: flex; gap: 11px; align-items: flex-start;
+    font-size: 14px; color: var(--ink); line-height: 1.4;
+  }
+  .message .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--honey); flex-shrink: 0; margin-top: 6px; }
+  .message.done .dot { background: var(--pine); }
+
+  /* ---------- Stats ---------- */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 8px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 15px; padding: 13px 12px; text-align: center; }
+  .stat .n { font-family: var(--display); font-weight: 600; font-size: 19px; letter-spacing: -0.02em; }
+  .stat .l { font-size: 10.5px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink-soft); margin-top: 3px; }
+
+  .pace {
+    margin-top: 12px; background: linear-gradient(180deg, #12563F, #0F4B3A); color: #EAF3EE;
+    border-radius: 15px; padding: 14px 16px; font-size: 13.5px; display: flex; gap: 10px; align-items: center;
+  }
+  .pace b { color: #fff; font-weight: 600; }
+  .pace .pico { font-size: 18px; }
+
+  /* ---------- Deposits ---------- */
+  .list-head { display: flex; align-items: baseline; justify-content: space-between; margin: 26px 0 10px; }
+  .list-head h2 { font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: -0.01em; }
+  .list-head .toggle { font-size: 13px; font-weight: 600; color: var(--pine); }
+  .dep {
+    display: flex; align-items: center; gap: 12px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 9px;
+    transition: transform .08s;
+  }
+  .dep:active { transform: scale(0.99); }
+  .dep .coin {
+    width: 34px; height: 34px; border-radius: 10px; background: #FCF3E0; color: var(--honey-deep);
+    display: grid; place-items: center; flex-shrink: 0;
+  }
+  .dep .coin svg { width: 17px; height: 17px; }
+  .dep .meta { flex: 1; min-width: 0; }
+  .dep .meta .d { font-size: 14px; font-weight: 600; }
+  .dep .meta .note { font-size: 12.5px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dep .amt { font-family: var(--display); font-weight: 600; font-size: 16px; color: var(--pine); }
+
+  .empty { text-align: center; color: var(--ink-soft); font-size: 14px; padding: 26px 20px; background: var(--surface); border: 1px dashed var(--line); border-radius: 15px; }
+
+  /* ---------- FAB ---------- */
+  .fab {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(22px + env(safe-area-inset-bottom)); z-index: 40;
+    background: var(--pine); color: #fff; font-weight: 600; font-size: 16px;
+    padding: 15px 26px; border-radius: 30px; display: flex; align-items: center; gap: 9px;
+    box-shadow: 0 10px 28px rgba(15,75,58,0.32);
+    transition: transform .08s;
+    max-width: 420px; width: calc(100% - 40px); justify-content: center;
+  }
+  .fab:active { transform: translateX(-50%) scale(0.98); }
+  .fab svg { width: 19px; height: 19px; }
+
+  /* ---------- Sheet / modal ---------- */
+  .scrim {
+    position: fixed; inset: 0; background: rgba(16,33,26,0.44); z-index: 50;
+    opacity: 0; pointer-events: none; transition: opacity .22s;
+  }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    background: var(--surface); border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+    padding: 10px 22px calc(26px + env(safe-area-inset-bottom));
+    transform: translateY(102%); transition: transform .28s cubic-bezier(.22,.61,.36,1);
+    max-width: 460px; margin: 0 auto;
+  }
+  .sheet.open { transform: translateY(0); }
+  .grip { width: 38px; height: 4px; border-radius: 3px; background: var(--line); margin: 6px auto 16px; }
+  .sheet h3 { font-family: var(--display); font-weight: 600; font-size: 20px; letter-spacing: -0.01em; margin-bottom: 18px; }
+  .sheet .actions { display: flex; gap: 10px; margin-top: 22px; }
+  .btn-ghost {
+    flex: 1; background: #F1F5F2; color: var(--ink); font-weight: 600; padding: 15px; border-radius: 14px; font-size: 15px;
+  }
+  .btn-ghost.danger { color: var(--coral); background: #FBEDE7; }
+  .btn-solid { flex: 1.4; background: var(--pine); color: #fff; font-weight: 600; padding: 15px; border-radius: 14px; font-size: 15px; }
+  .btn-solid:active, .btn-ghost:active { opacity: .85; }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed; left: 50%; transform: translateX(-50%) translateY(-16px);
+    top: calc(14px + env(safe-area-inset-top)); z-index: 80;
+    background: var(--pine-deep); color: #fff; font-weight: 600; font-size: 14px;
+    padding: 12px 18px; border-radius: 30px; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+    display: flex; align-items: center; gap: 8px; max-width: 92vw;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ---------- Confirm dialog ---------- */
+  .dialog-scrim {
+    position: fixed; inset: 0; background: rgba(16,33,26,0.5); z-index: 90;
+    display: none; align-items: center; justify-content: center; padding: 28px;
+  }
+  .dialog-scrim.open { display: flex; }
+  .dialog { background: var(--surface); border-radius: 22px; padding: 24px 22px; max-width: 360px; width: 100%; }
+  .dialog h4 { font-family: var(--display); font-weight: 600; font-size: 19px; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .dialog p { font-size: 14px; color: var(--ink-soft); line-height: 1.45; }
+  .dialog .actions { display: flex; gap: 10px; margin-top: 20px; }
+
+  .hidden { display: none !important; }
+
+  /* ---------- Tabs ---------- */
+  .tabs { display: inline-flex; background: #E1EAE3; border-radius: 12px; padding: 3px; margin-bottom: 18px; }
+  .tab { padding: 8px 18px; border-radius: 9px; font-size: 13.5px; font-weight: 600; color: var(--ink-soft); transition: color .15s; }
+  .tab.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+
+  /* ---------- Overview ---------- */
+  .ov-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 22px; }
+  .ov-card { background: var(--surface); border: 1px solid var(--line); border-radius: 15px; padding: 14px 15px; }
+  .ov-card .n { font-family: var(--display); font-weight: 600; font-size: 21px; letter-spacing: -0.02em; }
+  .ov-card .l { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink-soft); margin-top: 3px; }
+  .ov-title { font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: -0.01em; margin: 2px 0 12px; }
+  .ov-chart-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 12px; margin-bottom: 24px; }
+  .ov-chart { width: 100%; height: auto; display: block; }
+  .ov-legend { display: flex; gap: 18px; margin-top: 10px; font-size: 11.5px; color: var(--ink-soft); }
+  .ov-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .ov-legend .swatch { width: 13px; height: 3px; border-radius: 2px; }
+  .month-row { display: flex; align-items: center; gap: 12px; padding: 9px 0; }
+  .month-row .ml { width: 68px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .month-row .track { flex: 1; height: 8px; background: #EDF2ED; border-radius: 5px; overflow: hidden; }
+  .month-row .bar { height: 100%; background: var(--honey); border-radius: 5px; }
+  .month-row .mv { width: 82px; text-align: right; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- SETUP -->
+  <section id="setup" class="setup hidden">
+    <div class="mark">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M35 26 h30 v6 a6 6 0 0 1-6 6 h-18 a6 6 0 0 1-6-6 z" fill="#E6A93C"/>
+        <rect x="29" y="40" width="42" height="38" rx="11" fill="none" stroke="#E6A93C" stroke-width="4.5"/>
+        <rect x="34" y="58" width="32" height="16" rx="6" fill="#E6A93C"/>
+      </svg>
+    </div>
+    <h1>Start your savings jar</h1>
+    <p class="sub">Name what you're saving for, set a target, and watch it fill up.</p>
+
+    <div class="field">
+      <label for="s-name">What are you saving for?</label>
+      <input id="s-name" class="control" type="text" placeholder="e.g. Japan trip, emergency fund" maxlength="40" />
+    </div>
+
+    <div class="two">
+      <div class="field">
+        <label for="s-target">Target amount</label>
+        <div class="amount-row">
+          <span class="cur" id="s-cur-symbol">$</span>
+          <input id="s-target" class="control" type="number" inputmode="decimal" placeholder="5000" min="1" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="s-currency">Currency</label>
+        <select id="s-currency" class="control"></select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="s-date">Target date <span style="text-transform:none;font-weight:400">(optional)</span></label>
+      <input id="s-date" class="control" type="date" />
+      <p class="hint">Add a date and the jar will suggest a weekly pace.</p>
+    </div>
+
+    <button class="btn-primary" onclick="createGoal()">Create my jar</button>
+  </section>
+
+  <!-- APP -->
+  <section id="app" class="hidden">
+    <div class="topbar">
+      <span class="eyebrow">Savings jar</span>
+      <button class="icon-btn" onclick="openSettings()" aria-label="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+    <h1 class="goal-name" id="goal-name">Goal</h1>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-jar" onclick="switchView('jar')">Jar</button>
+      <button class="tab" id="tab-overview" onclick="switchView('overview')">Overview</button>
+    </div>
+
+    <div id="view-jar">
+    <div class="jar-stage">
+      <svg class="jar" id="jar" viewBox="0 0 190 236" aria-hidden="true">
+        <defs>
+          <clipPath id="jarClip">
+            <path d="M40 70 h110 a22 22 0 0 1 22 22 v100 a22 22 0 0 1-22 22 H40 a22 22 0 0 1-22-22 V92 a22 22 0 0 1 22-22 z"/>
+          </clipPath>
+          <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#F1BE59"/>
+            <stop offset="1" stop-color="#E19E2A"/>
+          </linearGradient>
+        </defs>
+        <!-- liquid -->
+        <g clip-path="url(#jarClip)">
+          <rect x="10" y="214" width="170" height="220" fill="url(#fillGrad)" id="fillRect"/>
+          <path id="wave" d="" fill="#F4C766" opacity="0.9"/>
+        </g>
+        <!-- jar outline -->
+        <path d="M40 70 h110 a22 22 0 0 1 22 22 v100 a22 22 0 0 1-22 22 H40 a22 22 0 0 1-22-22 V92 a22 22 0 0 1 22-22 z"
+              fill="none" stroke="#0F4B3A" stroke-width="6"/>
+        <!-- lid -->
+        <rect x="52" y="34" width="86" height="30" rx="12" fill="#0F4B3A"/>
+        <rect x="60" y="26" width="70" height="16" rx="8" fill="#12563F"/>
+        <!-- highlight -->
+        <path d="M40 80 q-10 8 -10 26 v70" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <div class="jar-caption">
+      <div class="saved tnum" id="saved-amt">$0</div>
+      <div class="of-target">of <b class="tnum" id="target-amt">$0</b> · <span id="pct">0%</span></div>
+    </div>
+
+    <div class="message" id="message">
+      <span class="dot"></span>
+      <span id="message-text">Every dollar you set aside is a step closer.</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n tnum" id="stat-togo">$0</div><div class="l">To go</div></div>
+      <div class="stat"><div class="n tnum" id="stat-deposits">0</div><div class="l">Deposits</div></div>
+      <div class="stat"><div class="n tnum" id="stat-third">—</div><div class="l" id="stat-third-l">Streak</div></div>
+    </div>
+
+    <div class="pace hidden" id="pace">
+      <span class="pico">🎯</span>
+      <span id="pace-text"></span>
+    </div>
+
+    <div class="list-head">
+      <h2>Deposits</h2>
+      <button class="toggle hidden" id="toggle-all" onclick="toggleAll()">Show all</button>
+    </div>
+    <div id="dep-list"></div>
+    </div><!-- /view-jar -->
+
+    <div id="view-overview" class="hidden">
+      <div class="ov-stats">
+        <div class="ov-card"><div class="n tnum" id="ov-total">$0</div><div class="l">Total saved</div></div>
+        <div class="ov-card"><div class="n tnum" id="ov-avg">$0</div><div class="l">Avg / deposit</div></div>
+        <div class="ov-card"><div class="n tnum" id="ov-best">$0</div><div class="l">Best month</div></div>
+        <div class="ov-card"><div class="n tnum" id="ov-months">0</div><div class="l">Months saving</div></div>
+      </div>
+
+      <div class="ov-title">Your climb</div>
+      <div class="ov-chart-wrap">
+        <svg class="ov-chart" id="ov-chart" viewBox="0 0 320 130" aria-hidden="true"></svg>
+        <div class="ov-legend">
+          <span><span class="swatch" style="background:var(--honey)"></span>Saved so far</span>
+          <span><span class="swatch" style="background:var(--pine)"></span>Target</span>
+        </div>
+      </div>
+
+      <div class="ov-title">By month</div>
+      <div id="ov-months-list"></div>
+    </div>
+
+    <button class="fab" onclick="openDeposit()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add to jar
+    </button>
+  </section>
+</div>
+
+<!-- DEPOSIT SHEET -->
+<div class="scrim" id="scrim" onclick="closeSheets(event)"></div>
+
+<div class="sheet" id="dep-sheet">
+  <div class="grip"></div>
+  <h3 id="dep-title">Add to jar</h3>
+  <div class="field">
+    <label for="d-amount">Amount</label>
+    <div class="amount-row">
+      <span class="cur" id="d-cur-symbol">$</span>
+      <input id="d-amount" class="control" type="number" inputmode="decimal" placeholder="50" min="0" step="0.01" />
+    </div>
+  </div>
+  <div class="field">
+    <label for="d-date">Date</label>
+    <input id="d-date" class="control" type="date" />
+  </div>
+  <div class="field">
+    <label for="d-note">Note <span style="text-transform:none;font-weight:400">(optional)</span></label>
+    <input id="d-note" class="control" type="text" placeholder="e.g. skipped takeaway" maxlength="60" />
+  </div>
+  <div class="actions">
+    <button class="btn-ghost danger hidden" id="d-delete" onclick="deleteDeposit()">Delete</button>
+    <button class="btn-ghost" onclick="closeSheets()">Cancel</button>
+    <button class="btn-solid" onclick="saveDeposit()">Save</button>
+  </div>
+</div>
+
+<!-- SETTINGS SHEET -->
+<div class="sheet" id="set-sheet">
+  <div class="grip"></div>
+  <h3>Edit goal</h3>
+  <div class="field">
+    <label for="e-name">Saving for</label>
+    <input id="e-name" class="control" type="text" maxlength="40" />
+  </div>
+  <div class="two">
+    <div class="field">
+      <label for="e-target">Target</label>
+      <div class="amount-row">
+        <span class="cur" id="e-cur-symbol">$</span>
+        <input id="e-target" class="control" type="number" inputmode="decimal" min="1" />
+      </div>
+    </div>
+    <div class="field">
+      <label for="e-currency">Currency</label>
+      <select id="e-currency" class="control"></select>
+    </div>
+  </div>
+  <div class="field">
+    <label for="e-date">Target date</label>
+    <input id="e-date" class="control" type="date" />
+  </div>
+  <div class="actions">
+    <button class="btn-ghost danger" onclick="resetAll()">Reset all</button>
+    <button class="btn-solid" onclick="saveSettings()">Save changes</button>
+  </div>
+</div>
+
+<div class="dialog-scrim" id="confirm-scrim" onclick="closeConfirm(event)">
+  <div class="dialog">
+    <h4>Start over?</h4>
+    <p>This clears your goal and every deposit, and can't be undone.</p>
+    <div class="actions">
+      <button class="btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-ghost danger" onclick="doReset()">Reset everything</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toast-text"></span></div>
+
+<script>
+"use strict";
+const KEY = 'savings_jar_v1';
+const CURRENCIES = [
+  ['AUD','$'],['MYR','RM'],['USD','$'],['SGD','$'],['NZD','$'],
+  ['GBP','£'],['EUR','€'],['JPY','¥'],['CAD','$'],['INR','₹'],['THB','฿'],['PHP','₱']
+];
+
+let state = null;       // { goal:{name,target,currency,date}, deposits:[] }
+let editingId = null;   // deposit being edited
+let showAll = false;
+let currentView = 'jar';
+
+/* ---------- storage (Claude app sync, with on-device fallback) ---------- */
+function hasCloud() { return typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function'; }
+async function persistLoad() {
+  if (hasCloud()) {
+    try { const r = await window.storage.get(KEY, false); return (r && r.value) ? JSON.parse(r.value) : null; }
+    catch (e) { return null; }
+  }
+  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; }
+  catch (e) { return null; }
+}
+function save() {
+  const val = JSON.stringify(state);
+  if (hasCloud()) { Promise.resolve(window.storage.set(KEY, val, false)).catch(() => {}); return; }
+  try { localStorage.setItem(KEY, val); } catch (e) { toast("Couldn't save on this device"); }
+}
+function wipe() {
+  if (hasCloud()) { Promise.resolve(window.storage.delete(KEY, false)).catch(() => {}); return; }
+  try { localStorage.removeItem(KEY); } catch (e) {}
+}
+
+/* ---------- helpers ---------- */
+function symbolFor(code) { const m = CURRENCIES.find(c => c[0] === code); return m ? m[1] : '$'; }
+function fmt(n, code) {
+  code = code || (state && state.goal.currency) || 'AUD';
+  const dp = code === 'JPY' ? 0 : (Number.isInteger(n) ? 0 : 2);
+  try {
+    return new Intl.NumberFormat(undefined, { style:'currency', currency:code, minimumFractionDigits:dp, maximumFractionDigits:dp }).format(n);
+  } catch (e) {
+    return symbolFor(code) + n.toLocaleString(undefined, { maximumFractionDigits: dp });
+  }
+}
+function total() { return state.deposits.reduce((s, d) => s + d.amount, 0); }
+function today() { const d = new Date(); return d.toISOString().slice(0,10); }
+function prettyDate(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString(undefined, { weekday:'short', day:'numeric', month:'short' });
+}
+function fillCurrencySelect(el, selected) {
+  el.innerHTML = CURRENCIES.map(c => `<option value="${c[0]}">${c[0]}</option>`).join('');
+  if (selected) el.value = selected;
+}
+
+/* ---------- setup ---------- */
+function initSetup() {
+  const sel = document.getElementById('s-currency');
+  fillCurrencySelect(sel, 'AUD');
+  const sym = document.getElementById('s-cur-symbol');
+  sym.textContent = symbolFor(sel.value);
+  sel.onchange = () => sym.textContent = symbolFor(sel.value);
+  document.getElementById('s-name').value = '';
+  document.getElementById('s-target').value = '';
+  document.getElementById('s-date').value = '';
+  document.getElementById('setup').classList.remove('hidden');
+}
+function createGoal() {
+  const name = document.getElementById('s-name').value.trim();
+  const target = parseFloat(document.getElementById('s-target').value);
+  const currency = document.getElementById('s-currency').value;
+  const date = document.getElementById('s-date').value || null;
+  if (!name) { toast('Give your jar a name'); return; }
+  if (!target || target <= 0) { toast('Set a target amount'); return; }
+  state = { goal:{ name, target, currency, date, created: today() }, deposits: [] };
+  save();
+  document.getElementById('setup').classList.add('hidden');
+  boot();
+}
+
+/* ---------- render ---------- */
+function render() {
+  const t = total();
+  const goal = state.goal;
+  const pct = Math.min(100, (t / goal.target) * 100);
+  const toGo = Math.max(0, goal.target - t);
+
+  document.getElementById('goal-name').textContent = goal.name;
+  document.getElementById('saved-amt').textContent = fmt(t);
+  document.getElementById('target-amt').textContent = fmt(goal.target);
+  document.getElementById('pct').textContent = Math.round(pct) + '%';
+  document.getElementById('stat-togo').textContent = fmt(toGo);
+  document.getElementById('stat-deposits').textContent = state.deposits.length;
+
+  // third stat: days left if date, else this-month total
+  const third = document.getElementById('stat-third');
+  const thirdL = document.getElementById('stat-third-l');
+  if (goal.date) {
+    const days = Math.ceil((new Date(goal.date + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 86400000);
+    third.textContent = days >= 0 ? days : '0';
+    thirdL.textContent = days === 1 ? 'Day left' : 'Days left';
+  } else {
+    const m = today().slice(0,7);
+    const monthTotal = state.deposits.filter(d => d.date.slice(0,7) === m).reduce((s,d)=>s+d.amount,0);
+    third.textContent = fmt(monthTotal);
+    thirdL.textContent = 'This month';
+  }
+
+  setJarFill(pct);
+  setMessage(pct, toGo, t);
+  setPace(toGo);
+  renderDeposits();
+  if (currentView === 'overview') renderOverview();
+}
+
+function switchView(v) {
+  currentView = v;
+  document.getElementById('view-jar').classList.toggle('hidden', v !== 'jar');
+  document.getElementById('view-overview').classList.toggle('hidden', v !== 'overview');
+  document.getElementById('tab-jar').classList.toggle('active', v === 'jar');
+  document.getElementById('tab-overview').classList.toggle('active', v === 'overview');
+  if (v === 'overview') renderOverview();
+}
+
+function renderOverview() {
+  const deps = state.deposits;
+  const t = total();
+  document.getElementById('ov-total').textContent = fmt(t);
+  document.getElementById('ov-avg').textContent = deps.length ? fmt(t / deps.length) : fmt(0);
+
+  const byMonth = {};
+  deps.forEach(d => { const k = d.date.slice(0,7); byMonth[k] = (byMonth[k] || 0) + d.amount; });
+  const months = Object.keys(byMonth).sort();
+  const best = months.length ? Math.max(...months.map(m => byMonth[m])) : 0;
+  document.getElementById('ov-best').textContent = fmt(best);
+  document.getElementById('ov-months').textContent = months.length;
+
+  const list = document.getElementById('ov-months-list');
+  if (!months.length) {
+    list.innerHTML = `<div class="empty">No deposits yet — your monthly breakdown will show here.</div>`;
+  } else {
+    const maxM = best || 1;
+    list.innerHTML = months.slice().reverse().map(m => {
+      const val = byMonth[m];
+      const label = new Date(m + '-01T00:00:00').toLocaleDateString(undefined, { month:'short', year:'numeric' });
+      const w = Math.max(4, (val / maxM) * 100);
+      return `<div class="month-row"><div class="ml">${label}</div><div class="track"><div class="bar" style="width:${w}%"></div></div><div class="mv tnum">${fmt(val)}</div></div>`;
+    }).join('');
+  }
+  drawClimb();
+}
+
+function drawClimb() {
+  const svg = document.getElementById('ov-chart');
+  const W = 320, H = 130, pad = 8;
+  const target = state.goal.target;
+  const deps = [...state.deposits].sort((a,b) => a.date.localeCompare(b.date));
+  if (deps.length === 0) {
+    svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#9AA8A0" font-size="12" font-family="Inter,sans-serif">Add a deposit to see your climb</text>`;
+    return;
+  }
+  let cum = 0;
+  const raw = deps.map(d => { cum += d.amount; return { t: new Date(d.date + 'T00:00:00').getTime(), cum }; });
+  const startX = raw[0].t;
+  const nowT = new Date(today() + 'T00:00:00').getTime();
+  let endX = Math.max(nowT, raw[raw.length-1].t);
+  if (state.goal.date) endX = Math.max(endX, new Date(state.goal.date + 'T00:00:00').getTime());
+  const spanX = Math.max(1, endX - startX);
+  const maxY = Math.max(target, cum);
+  const px = t => pad + ((t - startX) / spanX) * (W - pad*2);
+  const py = v => (H - pad) - (v / maxY) * (H - pad*2);
+
+  const pts = raw.map(r => [px(r.t), py(r.cum)]);
+  const first = pts[0], last = pts[pts.length-1];
+  let line = 'M' + first[0] + ' ' + first[1];
+  for (let i = 1; i < pts.length; i++) line += ' L' + pts[i][0] + ' ' + pts[i][1];
+  const nowX = px(Math.max(nowT, raw[raw.length-1].t));
+  line += ' L' + nowX + ' ' + last[1];
+  const area = line + ' L' + nowX + ' ' + (H-pad) + ' L' + first[0] + ' ' + (H-pad) + ' Z';
+  const targetY = py(target);
+
+  svg.innerHTML =
+    `<defs><linearGradient id="ovGrad" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="#F1BE59" stop-opacity="0.55"/>` +
+    `<stop offset="1" stop-color="#F1BE59" stop-opacity="0.05"/></linearGradient></defs>` +
+    `<line x1="${pad}" y1="${targetY}" x2="${W-pad}" y2="${targetY}" stroke="#0F4B3A" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.7"/>` +
+    `<path d="${area}" fill="url(#ovGrad)"/>` +
+    `<path d="${line}" fill="none" stroke="#E19E2A" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` +
+    `<circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="#E19E2A"/>`;
+}
+
+function setMessage(pct, toGo, t) {
+  const el = document.getElementById('message-text');
+  const box = document.getElementById('message');
+  const name = state.goal.name;
+  let msg;
+  box.classList.remove('done');
+  if (t <= 0) msg = `Every dollar you set aside gets you closer to ${name}.`;
+  else if (pct >= 100) { msg = `You did it — ${name} is fully saved. 🎉`; box.classList.add('done'); }
+  else if (pct >= 75) msg = `Three quarters of the way. ${name} is nearly yours.`;
+  else if (pct >= 50) msg = `Past the halfway mark. ${name} is within reach.`;
+  else if (pct >= 25) msg = `A quarter saved — this is becoming a habit.`;
+  else msg = `You've started, and starting is the hardest part.`;
+  el.textContent = msg;
+}
+
+function setPace(toGo) {
+  const pace = document.getElementById('pace');
+  if (!state.goal.date || toGo <= 0) { pace.classList.add('hidden'); return; }
+  const days = Math.ceil((new Date(state.goal.date + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 86400000);
+  if (days <= 0) { pace.classList.add('hidden'); return; }
+  const weeks = Math.max(1, Math.round(days / 7));
+  const perWeek = toGo / weeks;
+  const d = new Date(state.goal.date + 'T00:00:00');
+  const dstr = d.toLocaleDateString(undefined, { day:'numeric', month:'short', year:'numeric' });
+  document.getElementById('pace-text').innerHTML =
+    `Save about <b>${fmt(Math.ceil(perWeek))}</b>/week to reach it by <b>${dstr}</b>.`;
+  pace.classList.remove('hidden');
+}
+
+function renderDeposits() {
+  const list = document.getElementById('dep-list');
+  const toggle = document.getElementById('toggle-all');
+  const deps = [...state.deposits].sort((a,b) => b.date.localeCompare(a.date) || b.id - a.id);
+  if (deps.length === 0) {
+    list.innerHTML = `<div class="empty">No deposits yet. Tap “Add to jar” to log your first one.</div>`;
+    toggle.classList.add('hidden');
+    return;
+  }
+  const shown = showAll ? deps : deps.slice(0, 6);
+  list.innerHTML = shown.map(d => `
+    <div class="dep" onclick="openDeposit(${d.id})">
+      <span class="coin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10h3.2a1.3 1.3 0 0 1 0 2.6H10.5a1.3 1.3 0 0 0 0 2.6H14" stroke-width="1.6"/></svg>
+      </span>
+      <div class="meta">
+        <div class="d">${prettyDate(d.date)}</div>
+        ${d.note ? `<div class="note">${escapeHtml(d.note)}</div>` : ''}
+      </div>
+      <div class="amt tnum">+${fmt(d.amount)}</div>
+    </div>`).join('');
+  if (deps.length > 6) {
+    toggle.classList.remove('hidden');
+    toggle.textContent = showAll ? 'Show less' : `Show all ${deps.length}`;
+  } else {
+    toggle.classList.add('hidden');
+  }
+}
+function toggleAll() { showAll = !showAll; renderDeposits(); }
+function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- jar drawing ---------- */
+function setJarFill(pct) {
+  // jar inner area: y 70 (top) .. 214 (bottom), height 144
+  const topY = 76, botY = 210, span = botY - topY;
+  const level = botY - (span * Math.min(100, pct) / 100);
+  const rect = document.getElementById('fillRect');
+  rect.setAttribute('y', level);
+  rect.setAttribute('height', 236 - level + 10);
+  // wave surface
+  const w = document.getElementById('wave');
+  if (pct <= 0) { w.setAttribute('d', ''); return; }
+  const y = level;
+  w.setAttribute('d', `M10 ${y} q 30 -10 60 0 t 60 0 t 60 0 V ${y+20} H10 Z`);
+}
+
+/* ---------- deposit sheet ---------- */
+function openDeposit(id) {
+  editingId = (typeof id === 'number') ? id : null;
+  document.getElementById('d-cur-symbol').textContent = symbolFor(state.goal.currency);
+  const title = document.getElementById('dep-title');
+  const del = document.getElementById('d-delete');
+  if (editingId !== null) {
+    const d = state.deposits.find(x => x.id === editingId);
+    title.textContent = 'Edit deposit';
+    document.getElementById('d-amount').value = d.amount;
+    document.getElementById('d-date').value = d.date;
+    document.getElementById('d-note').value = d.note || '';
+    del.classList.remove('hidden');
+  } else {
+    title.textContent = 'Add to jar';
+    document.getElementById('d-amount').value = '';
+    document.getElementById('d-date').value = today();
+    document.getElementById('d-note').value = '';
+    del.classList.add('hidden');
+  }
+  openSheet('dep-sheet');
+  setTimeout(() => document.getElementById('d-amount').focus(), 260);
+}
+function saveDeposit() {
+  const amount = parseFloat(document.getElementById('d-amount').value);
+  const date = document.getElementById('d-date').value || today();
+  const note = document.getElementById('d-note').value.trim();
+  if (!amount || amount <= 0) { toast('Enter an amount'); return; }
+  const before = total();
+  if (editingId !== null) {
+    const d = state.deposits.find(x => x.id === editingId);
+    d.amount = amount; d.date = date; d.note = note;
+  } else {
+    state.deposits.push({ id: Date.now(), amount, date, note });
+  }
+  save();
+  closeSheets();
+  render();
+  checkMilestone(before, total());
+}
+function deleteDeposit() {
+  if (editingId === null) return;
+  state.deposits = state.deposits.filter(x => x.id !== editingId);
+  save(); closeSheets(); render();
+  toast('Deposit removed');
+}
+
+/* ---------- settings ---------- */
+function openSettings() {
+  const sel = document.getElementById('e-currency');
+  fillCurrencySelect(sel, state.goal.currency);
+  document.getElementById('e-cur-symbol').textContent = symbolFor(state.goal.currency);
+  sel.onchange = () => document.getElementById('e-cur-symbol').textContent = symbolFor(sel.value);
+  document.getElementById('e-name').value = state.goal.name;
+  document.getElementById('e-target').value = state.goal.target;
+  document.getElementById('e-date').value = state.goal.date || '';
+  openSheet('set-sheet');
+}
+function saveSettings() {
+  const name = document.getElementById('e-name').value.trim();
+  const target = parseFloat(document.getElementById('e-target').value);
+  const currency = document.getElementById('e-currency').value;
+  const date = document.getElementById('e-date').value || null;
+  if (!name) { toast('Name your goal'); return; }
+  if (!target || target <= 0) { toast('Set a target'); return; }
+  state.goal.name = name; state.goal.target = target;
+  state.goal.currency = currency; state.goal.date = date;
+  save(); closeSheets(); render();
+  toast('Goal updated');
+}
+function resetAll() {
+  document.getElementById('confirm-scrim').classList.add('open');
+}
+function closeConfirm(e) {
+  if (e && e.target && !e.target.classList.contains('dialog-scrim')) return;
+  document.getElementById('confirm-scrim').classList.remove('open');
+}
+function doReset() {
+  wipe();
+  state = null; showAll = false; editingId = null;
+  document.getElementById('confirm-scrim').classList.remove('open');
+  closeSheets();
+  document.getElementById('app').classList.add('hidden');
+  initSetup();
+}
+
+/* ---------- sheets ---------- */
+function openSheet(id) {
+  document.getElementById('scrim').classList.add('open');
+  document.getElementById(id).classList.add('open');
+}
+function closeSheets(e) {
+  if (e && e.target && e.target.id !== 'scrim') return;
+  document.getElementById('scrim').classList.remove('open');
+  document.getElementById('dep-sheet').classList.remove('open');
+  document.getElementById('set-sheet').classList.remove('open');
+}
+
+/* ---------- toast + milestones ---------- */
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+function checkMilestone(before, after) {
+  const tgt = state.goal.target;
+  const marks = [ [1, 'Goal complete! 🎉'], [0.75, 'Three quarters there 🌟'], [0.5, 'Halfway! 🙌'], [0.25, 'A quarter saved ✨'] ];
+  for (const [frac, msg] of marks) {
+    if (before < tgt*frac && after >= tgt*frac) { toast(msg); return; }
+  }
+}
+
+/* ---------- boot ---------- */
+function boot() {
+  document.getElementById('app').classList.remove('hidden');
+  render();
+}
+async function start() {
+  state = await persistLoad();
+  if (state && state.goal) boot();
+  else initSetup();
+}
+start();
+</script>
+</body>
+</html>
